@@ -1,6 +1,23 @@
 import { launch } from 'puppeteer';
+import { readFile } from 'fs';
 
+
+let jsonData;
 async function scrap() {
+
+    readFile('data.json', 'utf8', (err, data) => {
+
+        if (err) {
+            console.error(err);
+            return;
+        }
+
+        // Parse the JSON data
+        jsonData = JSON.parse(data);
+
+    });
+
+
     let browser = await launch({ headless: false });
     let page = await browser.newPage();
 
@@ -10,8 +27,8 @@ async function scrap() {
     await page.waitForSelector('.passwordInput__container-input input[type="password"]');
     await page.waitForSelector('.signIn__container-button button:nth-child(1)');
 
-    await page.type('.phoneInput__container-input input[name="userNumber"]', '6396048902');
-    await page.type('.passwordInput__container-input input[type="password"]', 'asad2005');
+    await page.type('.phoneInput__container-input input[name="userNumber"]', `${jsonData.login.userid}`);
+    await page.type('.passwordInput__container-input input[type="password"]', `${jsonData.login.password}`);
 
     await page.click('.signIn__container-button button:nth-child(1)');
 
@@ -58,21 +75,71 @@ async function scrap() {
     //r
 
     const violate = '.Betting__C-head .Betting__C-head-p';
-    await violateColor(page , violate)
+    await violateColor(page, violate)
+
+    await EnterAmout(10, page);
+
 
 }
 
-async function violateColor(page , violate) {
-    await page.waitForSelector(violate, { timeout: 100000 });
+async function violateColor(page, violateSelector) {
+    await page.waitForSelector(violateSelector, { timeout: 100000 });
 
-    const bettingButton = await page.$(violate);
+    const checkAndClickButton = async () => {
+        const bettingButton = await page.$(violateSelector);
 
-    if (bettingButton) {
-        console.log("Betting button found, clicking...");
-        await bettingButton.click();
-    } else {
-        console.log("Betting button not found");
+        if (bettingButton) {
+            const isDisabled = await page.evaluate(button => button.disabled, bettingButton);
+            if (!isDisabled) {
+                console.log("Betting button found and enabled, clicking...");
+                await bettingButton.click();
+                return true;
+            } else {
+                console.log("Betting button is disabled, waiting...");
+                return false;
+            }
+        } else {
+            console.log("Betting button not found");
+            return false;
+        }
+    };
+
+    let clicked = false;
+    while (!clicked) {
+        clicked = await checkAndClickButton();
+        if (!clicked) {
+            await page.waitForTimeout(500);  // Wait for 500ms before trying again
+        }
     }
 }
+
+async function EnterAmout(amount, page) {
+
+    const amountInputSelector = '.van-field__body input[type="tel"]';
+    const confirmButtonSelector = '.Betting__Popup-foot .Betting__Popup-foot-s';
+
+    await page.waitForSelector(amountInputSelector);
+
+    await page.evaluate(selector => {
+        const input = document.querySelector(selector);
+        if (input) {
+            input.value = "";
+        }
+    }, amountInputSelector);
+
+    await page.type(amountInputSelector, String(amount));
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    await page.waitForSelector(confirmButtonSelector);
+    const confirmButton = await page.$(confirmButtonSelector);
+
+    if (confirmButton) {
+        await confirmButton.click();
+    } else {
+        console.log("Confirm button not found in popup");
+    }
+}
+
 
 scrap().catch(error => console.error('Error:', error));
