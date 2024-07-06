@@ -1,4 +1,3 @@
-import { timeout } from 'puppeteer';
 import { launch } from 'puppeteer';
 
 async function scrap() {
@@ -23,6 +22,7 @@ async function scrap() {
 
 
     const confirmButtonSelector = '.van-button__text';
+    await page.waitForSelector('.van-button__text')
     const confirmButton = await page.$(confirmButtonSelector);
 
     if (confirmButton) {
@@ -53,17 +53,26 @@ async function scrap() {
         console.log("First child not found inside .damn-lottery");
     }
 
+    //g
+    //p
+    //r
 
-    // let violate = 'Betting__C-head Betting__C-head-p';
+    const violate = '.Betting__C-head .Betting__C-head-p';
+    await violateColor(page , violate)
 
+}
 
-    // await page.waitForSelector(violate);
+async function violateColor(page , violate) {
+    await page.waitForSelector(violate, { timeout: 100000 });
 
-    // if(violate){
-    //     violate.click();
-    // }
+    const bettingButton = await page.$(violate);
 
-    // await browser.close();
+    if (bettingButton) {
+        console.log("Betting button found, clicking...");
+        await bettingButton.click();
+    } else {
+        console.log("Betting button not found");
+    }
 }
 
 scrap().catch(error => console.error('Error:', error));
