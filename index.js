@@ -70,7 +70,7 @@ async function manageBetCycle(page, amounts) {
             timerValue = await getTimerValue(page);
         }
 
-        const result = await placeBet(page, amounts[currentIndex]);
+        const result = await placeBet(page, amounts[currentIndex], timerValue);
 
         if (result === 'violate') {
             currentIndex = 0;
@@ -97,7 +97,7 @@ async function getTimerValue(page) {
     return timerValue;
 }
 
-async function placeBet(page, amount) {
+async function placeBet(page, amount, timerValue) {
     const violateSelector = '.Betting__C-head .Betting__C-head-p';
     await page.waitForSelector(violateSelector, { timeout: 100000 });
 
@@ -123,6 +123,9 @@ async function placeBet(page, amount) {
     }
 
     await enterAmount(amount, page);
+
+    const waitTime = (60 - timerValue + 1) * 1000;
+    await new Promise(resolve => setTimeout(resolve, waitTime));
 
     const result = await checkBetResult(page);
     return result;
