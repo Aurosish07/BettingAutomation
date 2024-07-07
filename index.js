@@ -1,5 +1,6 @@
 import { launch } from 'puppeteer';
 import { readFile } from 'fs';
+import { exit } from 'process';
 
 
 let jsonData;
@@ -77,13 +78,41 @@ async function scrap() {
     const violate = '.Betting__C-head .Betting__C-head-p';
 
 
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // let timerSelector = '.TimeLeft__C-time:nth-child(4)';
+
+    while (true) {
+
+        let timerValue = await getTimerValue(page);
+        console.log(`Timer value: ${timerValue}`);
+
+        if (timerValue > 6) {
+            await violateColor(page, violate);
+            break;
+        } else {
+            console.log("Waiting for timer to be above 5 seconds...");
+            await new Promise(resolve => setTimeout(resolve, 600));
+        }
+
+    }
 
 
-    await violateColor(page, violate)
-    await EnterAmout(10, page);
+}
 
-
+async function getTimerValue(page) {
+    const timerSelector = '.TimeLeft__C-time';
+    const timerValue = await page.evaluate(timerSelector => {
+        const timerElement = document.querySelector(timerSelector);
+        if (timerElement) {
+            const timerChildren = timerElement.children;
+            const tens = parseInt(timerChildren[3].innerText, 10);
+            const units = parseInt(timerChildren[4].innerText, 10);
+            return tens * 10 + units;
+        }
+        return null;
+    }, timerSelector);
+    return timerValue;
 }
 
 async function violateColor(page, violateSelector) {
@@ -112,9 +141,12 @@ async function violateColor(page, violateSelector) {
     while (!clicked) {
         clicked = await checkAndClickButton();
         if (!clicked) {
-            await page.waitForTimeout(500);  // Wait for 500ms before trying again
+            await new Promise(resolve => setTimeout(resolve, 200));
         }
     }
+
+    await EnterAmout(10, page);
+
 }
 
 async function EnterAmout(amount, page) {
