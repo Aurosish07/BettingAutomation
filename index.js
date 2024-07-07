@@ -8,7 +8,7 @@ async function scrap() {
     let browser = await launch({ headless: false });
     let page = await browser.newPage();
 
-    await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 60000 });
+    await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 100000 });
 
     await page.waitForSelector('.phoneInput__container-input input[name="userNumber"]');
     await page.waitForSelector('.passwordInput__container-input input[type="password"]');
@@ -65,7 +65,7 @@ async function manageBetCycle(page, amounts) {
         let timerValue = await getTimerValue(page);
         console.log(`Timer value: ${timerValue}`);
 
-        while (timerValue <= 10) {
+        while (timerValue <= 6) {
             console.log("Waiting for timer to be above 10 seconds...");
             timerValue = await getTimerValue(page);
         }
@@ -122,7 +122,14 @@ async function placeBet(page, amount, timerValue) {
         }
     }
 
-    await enterAmount(amount, page);
+    try {
+        await enterAmount(amount, page);
+    } catch (error) {
+        console.error("Error in enterAmount: ", error);
+        console.log("Retrying to place the bet...");
+        return await placeBet(page, amount, timerValue);
+    }
+
 
     const waitTime = (60 - timerValue + 1) * 1000;
     await new Promise(resolve => setTimeout(resolve, waitTime));
@@ -130,6 +137,7 @@ async function placeBet(page, amount, timerValue) {
     const result = await checkBetResult(page);
     return result;
 }
+
 
 async function enterAmount(amount, page) {
     const amountInputSelector = '.van-field__body input[type="tel"]';
@@ -147,14 +155,31 @@ async function enterAmount(amount, page) {
     await page.type(amountInputSelector, String(amount));
 
     await page.waitForSelector(confirmButtonSelector);
+
     const confirmButton = await page.$(confirmButtonSelector);
 
     if (confirmButton) {
-        await confirmButton.click();
+        try {
+            await page.evaluate(selector => {
+                const element = document.querySelector(selector);
+                if (element) {
+                    const rect = element.getBoundingClientRect();
+                    if (rect.width > 0 && rect.height > 0) {
+                        element.click();
+                    } else {
+                        throw new Error('Element is not visible');
+                    }
+                }
+            }, confirmButtonSelector);
+            console.log("Confirm button clicked successfully");
+        } catch (error) {
+            console.log("Error clicking confirm button: ", error.message);
+        }
     } else {
         console.log("Confirm button not found in popup");
     }
 }
+
 
 async function checkBetResult(page) {
     const firstChildSelector = '.GameRecord__C-body > .van-row:first-child .van-col:last-child .GameRecord__C-origin';
