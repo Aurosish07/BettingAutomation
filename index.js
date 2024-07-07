@@ -1,6 +1,7 @@
 import { launch } from 'puppeteer';
 import { readFile } from 'fs/promises';
 
+//The main function
 async function scrap() {
     const data = await readFile('data.json', 'utf8');
     const jsonData = JSON.parse(data);
@@ -35,6 +36,7 @@ async function scrap() {
 
     await new Promise(resolve => setTimeout(resolve, 2000));
 
+    //clicking on the win-go
     await page.waitForSelector('.daman-lottery');
 
     const firstChildSelector = '.daman-lottery > .daman_img:first-child';
@@ -58,6 +60,7 @@ async function scrap() {
     await manageBetCycle(page, jsonData.amounts);
 }
 
+//Betting started
 async function manageBetCycle(page, amounts) {
     let currentIndex = 0;
 
@@ -82,6 +85,7 @@ async function manageBetCycle(page, amounts) {
     }
 }
 
+//to get current Timing
 async function getTimerValue(page) {
     const timerSelector = '.TimeLeft__C-time';
     const timerValue = await page.evaluate(timerSelector => {
@@ -194,6 +198,7 @@ async function enterAmount(amount, page) {
 }
 
 
+//To cheak and return the result of bet
 async function checkBetResult(page) {
     const firstChildSelector = '.GameRecord__C-body > .van-row:first-child .van-col:last-child .GameRecord__C-origin';
     await page.waitForSelector(firstChildSelector);
