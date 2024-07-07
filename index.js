@@ -92,7 +92,7 @@ async function scrap() {
             break;
         } else {
             console.log("Waiting for timer to be above 5 seconds...");
-            await new Promise(resolve => setTimeout(resolve, 600));
+            await new Promise(resolve => setTimeout(resolve, 6000));
         }
 
     }
