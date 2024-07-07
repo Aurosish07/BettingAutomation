@@ -131,7 +131,20 @@ async function placeBet(page, amount, timerValue) {
     }
 
 
-    const waitTime = (60 - timerValue + 1) * 1000;
+    const timerSelector = '.TimeLeft__C-time';
+    const RealTime = await page.evaluate(timerSelector => {
+        const timerElement = document.querySelector(timerSelector);
+        if (timerElement) {
+            const timerChildren = timerElement.children;
+            const tensSeconds = parseInt(timerChildren[3].innerText, 10);
+            const unitsSeconds = parseInt(timerChildren[4].innerText, 10);
+            const seconds = tensSeconds * 10 + unitsSeconds;
+            return seconds;
+        }
+        return null;
+    }, timerSelector);
+
+    const waitTime = (RealTime + 2) * 1000;
     await new Promise(resolve => setTimeout(resolve, waitTime));
 
     const result = await checkBetResult(page);
