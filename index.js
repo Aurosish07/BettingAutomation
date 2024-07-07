@@ -75,8 +75,12 @@ async function scrap() {
     //r
 
     const violate = '.Betting__C-head .Betting__C-head-p';
-    await violateColor(page, violate)
 
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+
+    await violateColor(page, violate)
     await EnterAmout(10, page);
 
 
@@ -128,8 +132,6 @@ async function EnterAmout(amount, page) {
     }, amountInputSelector);
 
     await page.type(amountInputSelector, String(amount));
-
-    await new Promise(resolve => setTimeout(resolve, 2000));
 
     await page.waitForSelector(confirmButtonSelector);
     const confirmButton = await page.$(confirmButtonSelector);
