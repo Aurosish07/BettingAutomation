@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betting Automation</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f2f5;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: none;
+        }
+
+        .button-container {
+            text-align: center;
+        }
+
+        .button-container button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .button-container button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Betting Automation</h1>
+        <form id="bettingForm" action="/submit" method="post">
+            <div class="form-group">
+                <label for="userId">User ID</label>
+                <input type="number" id="userId" name="userId" placeholder="Enter your Userid (Only MobileNo)" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            </div>
+            <div class="form-group">
+                <label for="betType">Bet Type</label>
+                <select id="betType" name="betType" required>
+                    <option value="color">Violate Color</option>
+                    <option value="number">Number</option>
+                </select>
+            </div>
+            <div class="form-group" id="numberInput" style="display:none;">
+                <label for="betNumber">Bet Number (0-9)</label>
+                <input type="number" id="betNumber" name="betNumber" min="0" max="9">
+            </div>
+            <div class="form-group">
+                <label for="betAmounts">Bet Amounts (comma separated, 50 values)</label>
+                <textarea id="betAmounts" name="betAmounts" placeholder="ex:- 10 , 30 , 90 , ...." required></textarea>
+            </div>
+            <div class="button-container">
+                <button type="submit">Submit</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const betTypeSelect = document.getElementById('betType');
+        const numberInput = document.getElementById('numberInput');
+
+        betTypeSelect.addEventListener('change', function () {
+            if (this.value === 'number') {
+                numberInput.style.display = 'block';
+            } else {
+                numberInput.style.display = 'none';
+            }
+        });
+
+    </script>
+</body>
+
+</html>

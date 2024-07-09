@@ -1,11 +1,134 @@
 import { launch } from 'puppeteer';
-import { readFile } from 'fs/promises';
+import express from "express";
+import bodyParser from 'body-parser';
 
-const data = await readFile('data.json', 'utf8');
-const jsonData = JSON.parse(data);
+let jsonData;
+
+const app = express();
+const port = 3000;
+
+app.use(bodyParser.json());
+app.use(express.static("public"));
+app.use(bodyParser.urlencoded({ extended: 1 }));
+
+
+app.get("/", (req, res) => {
+
+    res.sendFile("public/index.html", { root: __dirname + "/public" });
+
+})
+
+app.post("/submit", (req, resp) => {
+
+    let data = {
+        login: {
+            userid: req.body.userId,
+            password: req.body.password
+        },
+        betType: req.body.betType,
+        amounts: req.body.betAmounts.split(',').map(Number),
+        Betno: req.body.betNumber
+    };
+
+    jsonData = data;
+
+    console.log(data)
+
+    resp.redirect("/handler")
+
+})
+
+app.get("/handler", (req, resp) => {
+
+
+    if (jsonData.betType == "color") {
+
+        scrap1().catch(error => {
+            console.error('Error:', error);
+            resp.status(500).send({ error: 'An error occurred' });
+        });
+
+    } else {
+        scrap2().catch(error => {
+            console.error('Error:', error);
+            resp.status(500).send({ error: 'An error occurred' });
+        });
+    }
+
+
+})
+
+
+
+
+app.listen(port, () => {
+    console.log(`Server is running at http://localhost:${port}`);
+});
 
 //The main function
-async function scrap() {
+async function scrap1() {
+
+    let browser = await launch({ headless: false });
+    let page = await browser.newPage();
+
+    await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 100000 });
+
+    await page.waitForSelector('.phoneInput__container-input input[name="userNumber"]');
+    await page.waitForSelector('.passwordInput__container-input input[type="password"]');
+    await page.waitForSelector('.signIn__container-button button:nth-child(1)');
+
+    await page.type('.phoneInput__container-input input[name="userNumber"]', `${jsonData.login.userid}`);
+    await page.type('.passwordInput__container-input input[type="password"]', `${jsonData.login.password}`);
+
+    await page.click('.signIn__container-button button:nth-child(1)');
+
+    await page.waitForNavigation({ waitUntil: 'networkidle0' });
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const confirmButtonSelector = '.van-button__text';
+    await page.waitForSelector(confirmButtonSelector);
+    const confirmButton = await page.$(confirmButtonSelector);
+
+    if (confirmButton) {
+        await confirmButton.click();
+    } else {
+        console.log("Confirm button not found");
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    //clicking on the win-go
+    await page.waitForSelector('.daman-lottery');
+
+    const firstChildSelector = '.daman-lottery > .daman_img:first-child';
+    const firstChild = await page.$(firstChildSelector);
+
+    if (firstChild) {
+        const buttonSelector = '.daman-btn';
+        const button = await firstChild.$(buttonSelector);
+        if (button) {
+            console.log("Button found, clicking...");
+            await button.click();
+        } else {
+            console.log("Button not found inside the first child");
+        }
+    } else {
+        console.log("First child not found inside .daman-lottery");
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    await manageBetCycle(page, jsonData.amounts);
+
+    // await manageNumberBetCycle(page, jsonData.amounts[0]);
+}
+
+
+
+
+
+async function scrap2() {
 
     let browser = await launch({ headless: false });
     let page = await browser.newPage();
@@ -342,4 +465,5 @@ async function checkNumberBetResult(page, number) {
 }
 
 
-scrap().catch(error => console.error('Error:', error));
+// scrap1().catch(error => console.error('Error:', error));
+// scrap2().catch(error => console.error('Error:', error));
