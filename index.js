@@ -1,10 +1,11 @@
 import { launch } from 'puppeteer';
 import { readFile } from 'fs/promises';
 
+const data = await readFile('data.json', 'utf8');
+const jsonData = JSON.parse(data);
+
 //The main function
 async function scrap() {
-    const data = await readFile('data.json', 'utf8');
-    const jsonData = JSON.parse(data);
 
     let browser = await launch({ headless: false });
     let page = await browser.newPage();
@@ -57,7 +58,9 @@ async function scrap() {
 
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    await manageBetCycle(page, jsonData.amounts);
+    // await manageBetCycle(page, jsonData.amounts);
+
+    await manageNumberBetCycle(page, jsonData.amounts[0]);
 }
 
 //Betting started
@@ -218,5 +221,125 @@ async function checkBetResult(page) {
     }
     return 'continue';
 }
+
+
+
+
+
+
+
+
+
+
+
+
+//Function section for Number Bet ______________________________________________________________  Starting
+
+
+async function manageNumberBetCycle(page, initialAmount) {
+    let amount = initialAmount;
+    let betIndex = 1;
+    const betArray = jsonData.amounts;
+    const userNumber = parseInt(jsonData.Betno, 10);
+
+    while (true) {
+        let timerValue = await getTimerValue(page);
+        console.log(`Timer value: ${timerValue}`);
+
+        if (timerValue > 6) {
+            const result = await placeNumberBet(page, amount, userNumber, timerValue);
+            if (result === 'loss') {
+                amount = betArray[betIndex];
+                betIndex = (betIndex + 1) % betArray.length;
+            } else if (result === 'win') {
+                amount = initialAmount;
+                betIndex = 0;
+            }
+        } else {
+            console.log("Waiting for timer to be above 6 seconds...");
+            await new Promise(resolve => setTimeout(resolve, 600));
+        }
+    }
+}
+
+async function placeNumberBet(page, amount, number, timerValue) {
+    const numberSelector = `.Betting__C-numC-item${number}`;
+    await page.waitForSelector(numberSelector);
+
+    const checkAndClickButton = async () => {
+        const numberButton = await page.$(numberSelector);
+        if (numberButton) {
+            const isDisabled = await page.evaluate(button => button.disabled, numberButton);
+            if (!isDisabled) {
+                console.log(`Number button ${number} found and enabled, clicking...`);
+                await numberButton.click();
+                return true;
+            }
+        }
+        return false;
+    };
+
+    let clicked = false;
+    while (!clicked) {
+        clicked = await checkAndClickButton();
+        if (!clicked) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+    }
+
+    try {
+        await enterAmount(amount, page);
+    } catch (error) {
+        console.error("Error in enterAmount: ", error);
+        console.log("Retrying to place the bet...");
+        return await placeNumberBet(page, amount, number, timerValue);
+    }
+
+    const timerSelector = '.TimeLeft__C-time';
+    const RealTime = await page.evaluate(timerSelector => {
+        const timerElement = document.querySelector(timerSelector);
+        if (timerElement) {
+            const timerChildren = timerElement.children;
+            const tensSeconds = parseInt(timerChildren[3].innerText, 10);
+            const unitsSeconds = parseInt(timerChildren[4].innerText, 10);
+            const seconds = tensSeconds * 10 + unitsSeconds;
+            return seconds;
+        }
+        return null;
+    }, timerSelector);
+
+    const waitTime = (RealTime + 2) * 1000; // Adjusting the wait time calculation
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+
+    const result = await checkNumberBetResult(page, number);
+    return result;
+}
+
+async function checkNumberBetResult(page, number) {
+    const resultSelector = '.GameRecord__C-body .van-row';
+    await page.waitForSelector(resultSelector, { timeout: 100000 });
+
+    const lastResult = await page.evaluate(resultSelector => {
+        const resultElement = document.querySelector(resultSelector);
+        if (resultElement) {
+            const secondChild = resultElement.children[1];
+            if (secondChild) {
+                const resultNumberElement = secondChild.querySelector('.GameRecord__C-body-num');
+                if (resultNumberElement) {
+                    const resultNumber = parseInt(resultNumberElement.innerText, 10);
+                    return resultNumber;
+                }
+            }
+        }
+        return null;
+    }, resultSelector);
+
+    if (lastResult === number) {
+        return 'win';
+    } else {
+        return 'loss';
+    }
+}
+
 
 scrap().catch(error => console.error('Error:', error));
