@@ -1,17 +1,9 @@
 #!/bin/bash
 
-# Update package list and install dependencies
-apt-get update
-apt-get install -y wget gnupg
-
-# Download the Google Chrome .deb package
-wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-
-# Install the .deb package
-dpkg -i google-chrome-stable_current_amd64.deb
-
-# Fix missing dependencies
-apt-get install -y -f
-
-# Remove the .deb package
-rm google-chrome-stable_current_amd64.deb
+# Install necessary packages and Chrome
+sudo apt-get update
+sudo apt-get install -y wget gnupg
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+sudo apt-get update
+sudo apt-get install -y google-chrome-stable
