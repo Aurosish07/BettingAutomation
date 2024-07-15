@@ -68,12 +68,7 @@ app.listen(port, () => {
 //The main function
 async function scrap1() {
 
-    const browser = await puppeteer.launch({
-        headless: false,
-        executablePath: '/usr/bin/google-chrome', // Adjust this path if necessary
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-
+    let browser = await launch({ headless: false });
     let page = await browser.newPage();
 
     await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 100000 });
@@ -135,12 +130,7 @@ async function scrap1() {
 
 async function scrap2() {
 
-    const browser = await puppeteer.launch({
-        headless: false,
-        executablePath: '/usr/bin/google-chrome', // Adjust this path if necessary
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    
+    let browser = await launch({ headless: false });
     let page = await browser.newPage();
 
     await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 100000 });
