@@ -202,10 +202,12 @@ async function manageBetCycle(page, amounts) {
         const result = await placeBet(page, amounts[currentIndex], timerValue);
 
         if (result === 'violate') {
+            await closePopup(page);
             currentIndex = 0;
             console.log("Violation occurred, restarting with 10");
         } else {
-            currentIndex = (currentIndex + 1) % amounts.length;
+            await closePopup(page);
+            currentIndex = (currentIndex + 1);
             console.log(`Bet placed successfully, moving to amount: ${amounts[currentIndex]}`);
         }
     }
@@ -372,11 +374,13 @@ async function manageNumberBetCycle(page, initialAmount) {
         if (timerValue > 6) {
             const result = await placeNumberBet(page, amount, userNumber, timerValue);
             if (result === 'loss') {
+                await closePopup(page);
                 amount = betArray[betIndex];
-                betIndex = (betIndex + 1) % betArray.length;
+                betIndex = (betIndex + 1);
             } else if (result === 'win') {
+                await closePopup(page);
                 amount = initialAmount;
-                betIndex = 0;
+                betIndex = 1;
             }
         } else {
             console.log("Waiting for timer to be above 6 seconds...");
@@ -461,6 +465,26 @@ async function checkNumberBetResult(page, number) {
         return 'win';
     } else {
         return 'loss';
+    }
+}
+
+
+
+
+async function closePopup(page) {
+    const closeButtonSelector = '.WinningTip__C-body .closeBtn';
+    try {
+        await page.waitForSelector(closeButtonSelector, { timeout: 5000, visible: true });
+        const closeButton = await page.$(closeButtonSelector);
+        if (closeButton) {
+            console.log("Close button found, clicking...");
+            await closeButton.click();
+            console.log("Close button clicked successfully");
+        } else {
+            console.log("Close button not found");
+        }
+    } catch (error) {
+        console.log("Error finding or clicking close button:", error.message);
     }
 }
 
