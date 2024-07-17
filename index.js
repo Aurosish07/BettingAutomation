@@ -48,8 +48,13 @@ app.get("/handler", (req, resp) => {
             resp.status(500).send({ error: 'An error occurred' });
         });
 
-    } else {
+    } else if (jsonData.betType == "number") {
         scrap2().catch(error => {
+            console.error('Error:', error);
+            resp.status(500).send({ error: 'An error occurred' });
+        });
+    } else {
+        scrap3().catch(error => {
             console.error('Error:', error);
             resp.status(500).send({ error: 'An error occurred' });
         });
@@ -185,6 +190,65 @@ async function scrap2() {
 
     await manageNumberBetCycle(page, jsonData.amounts[0]);
 }
+
+
+async function scrap3() {
+
+    let browser = await launch({ headless: false });
+    let page = await browser.newPage();
+
+    await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 100000 });
+
+    await page.waitForSelector('.phoneInput__container-input input[name="userNumber"]');
+    await page.waitForSelector('.passwordInput__container-input input[type="password"]');
+    await page.waitForSelector('.signIn__container-button button:nth-child(1)');
+
+    await page.type('.phoneInput__container-input input[name="userNumber"]', `${jsonData.login.userid}`);
+    await page.type('.passwordInput__container-input input[type="password"]', `${jsonData.login.password}`);
+
+    await page.click('.signIn__container-button button:nth-child(1)');
+
+    await page.waitForNavigation({ waitUntil: 'networkidle0' });
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const confirmButtonSelector = '.van-button__text';
+    await page.waitForSelector(confirmButtonSelector);
+    const confirmButton = await page.$(confirmButtonSelector);
+
+    if (confirmButton) {
+        await confirmButton.click();
+    } else {
+        console.log("Confirm button not found");
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    //clicking on the win-go
+    await page.waitForSelector('.daman-lottery');
+
+    const firstChildSelector = '.daman-lottery > .daman_img:first-child';
+    const firstChild = await page.$(firstChildSelector);
+
+    if (firstChild) {
+        const buttonSelector = '.daman-btn';
+        const button = await firstChild.$(buttonSelector);
+        if (button) {
+            console.log("Button found, clicking...");
+            await button.click();
+        } else {
+            console.log("Button not found inside the first child");
+        }
+    } else {
+        console.log("First child not found inside .daman-lottery");
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    await manageNumberBetCycle2(page, jsonData.amounts[0]);
+}
+
+
 
 //Betting started
 async function manageBetCycle(page, amounts) {
@@ -487,6 +551,189 @@ async function closePopup(page) {
         console.log("Error finding or clicking close button:", error.message);
     }
 }
+
+
+
+
+
+
+
+// function for automatic Number bet , this section _________________________________________________ reserved
+
+
+async function manageNumberBetCycle2(page, initialAmount) {
+    let amount = initialAmount;
+    let betIndex = 1;
+    const betArray = jsonData.amounts;
+
+    while (true) {
+        let timerValue = await getTimerValue(page);
+        console.log(`Timer value: ${timerValue}`);
+
+        if (timerValue > 6) {
+            // Get the best number to bet on
+            const userNumber = await getChartData(page);
+            console.log('Betting on Number : ', userNumber);
+
+            const result = await placeNumberBet2(page, amount, userNumber, timerValue);
+
+            if (result === 'loss') {
+                await closePopup(page);
+                amount = betArray[betIndex];
+                betIndex = (betIndex + 1);
+            } else if (result === 'win') {
+                await closePopup(page);
+                amount = initialAmount;
+                betIndex = 1;
+            }
+        } else {
+            console.log("Waiting for timer to be above 6 seconds...");
+            await new Promise(resolve => setTimeout(resolve, 600));
+        }
+    }
+}
+
+
+
+async function getChartData(page) {
+
+    await page.evaluate(() => {
+        const recordNav = document.querySelector('.RecordNav__C');
+        if (recordNav) {
+            const chartButton = recordNav.children[1];
+            if (chartButton) {
+                chartButton.click();
+            }
+        }
+    });
+
+    console.log("chat section");
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    await page.waitForSelector('.Trend__C-body1');
+
+    console.log("Body is found");
+
+    const numbersData = await page.evaluate(() => {
+        // The parent container of the numbers data
+        const trendBody = document.querySelector('.Trend__C-body1');
+
+        // Elements representing the winning numbers
+        const winningNumberElements = Array.from(trendBody.querySelectorAll('.Trend__C-body1-line-num')[0].children);
+
+        // Elements representing the missing values
+        const missingElements = Array.from(trendBody.querySelectorAll('.Trend__C-body1-line-num')[1].children);
+
+        // Elements representing the frequencies
+        const frequencyElements = Array.from(trendBody.querySelectorAll('.Trend__C-body1-line-num')[3].children);
+
+        const numbersData = [];
+
+        frequencyElements.forEach((frequencyElement, index) => {
+            const frequency = parseInt(frequencyElement.innerText); // Get frequency value
+            const missing = parseInt(missingElements[index].innerText); // Get corresponding missing value
+            const number = parseInt(winningNumberElements[index].innerText); // Get corresponding winning number
+            numbersData.push({ number, frequency, missing }); // Store the data
+        });
+
+        // Sort data by frequency in descending order, and by missing in descending order if frequencies are the same
+        numbersData.sort((a, b) => b.frequency - a.frequency || b.missing - a.missing);
+
+        return numbersData;
+    });
+
+    console.log(numbersData);
+
+    // Return the winning number based on the highest frequency and missing value
+    if (numbersData && numbersData.length > 0) {
+        return numbersData[0].number;
+    } else {
+        return null;
+        // Return null if no data is found
+    }
+}
+
+
+
+async function placeNumberBet2(page, amount, number, timerValue) {
+    const numberSelector = `.Betting__C-numC-item${number}`;
+    await page.waitForSelector(numberSelector);
+
+    const checkAndClickButton = async () => {
+        const numberButton = await page.$(numberSelector);
+        if (numberButton) {
+            const isDisabled = await page.evaluate(button => button.disabled, numberButton);
+            if (!isDisabled) {
+                console.log(`Number button ${number} found and enabled, clicking...`);
+                await numberButton.click();
+                return true;
+            }
+        }
+        return false;
+    };
+
+    let clicked = false;
+    while (!clicked) {
+        clicked = await checkAndClickButton();
+        if (!clicked) {
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+    }
+
+    try {
+        await enterAmount(amount, page);
+    } catch (error) {
+        console.error("Error in enterAmount: ", error);
+        console.log("Retrying to place the bet...");
+        return await placeNumberBet2(page, amount, number, timerValue);
+    }
+
+    const timerSelector = '.TimeLeft__C-time';
+    const RealTime = await page.evaluate(timerSelector => {
+        const timerElement = document.querySelector(timerSelector);
+        if (timerElement) {
+            const timerChildren = timerElement.children;
+            const tensSeconds = parseInt(timerChildren[3].innerText, 10);
+            const unitsSeconds = parseInt(timerChildren[4].innerText, 10);
+            const seconds = tensSeconds * 10 + unitsSeconds;
+            return seconds;
+        }
+        return null;
+    }, timerSelector);
+
+    const waitTime = (RealTime + 2) * 1000; // Adjusting the wait time calculation
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+
+    const result = await checkNumberBetResult2(page, number);
+    return result;
+}
+
+async function checkNumberBetResult2(page, number) {
+    const resultSelector = '.Trend__C-body2 div:first-child';
+    await page.waitForSelector(resultSelector, { timeout: 100000 });
+
+    const lastResult = await page.evaluate(resultSelector => {
+        const resultElement = document.querySelector(resultSelector);
+        if (resultElement) {
+            const resultNumber = parseInt(resultElement.getAttribute('number'), 10);
+            return resultNumber;
+        }
+        return null;
+    }, resultSelector);
+
+    if (lastResult === number) {
+        return 'win';
+    } else {
+        return 'loss';
+    }
+}
+
+
+
+
+
+
 
 
 // scrap1().catch(error => console.error('Error:', error));
