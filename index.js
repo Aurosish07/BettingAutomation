@@ -3,6 +3,7 @@ import express from "express";
 import bodyParser from 'body-parser';
 
 let jsonData;
+let browser;
 
 const app = express();
 const port = 3000;
@@ -64,6 +65,21 @@ app.get("/handler", (req, resp) => {
 })
 
 
+app.post('/stop', async (req, res) => {
+    try {
+        if (browser) {
+            await browser.close(); // Close the browser
+            browser = null; // Set the browser to null
+            res.status(200).send({ message: 'Browser closed successfully.' });
+        } else {
+            res.status(200).send({ message: 'Browser is not running.' });
+        }
+    } catch (error) {
+        console.error('Error closing the browser:', error);
+        res.status(500).send({ message: 'Error closing the browser.' });
+    }
+});
+
 
 
 app.listen(port, () => {
@@ -73,7 +89,7 @@ app.listen(port, () => {
 //The main function
 async function scrap1() {
 
-    let browser = await launch({ headless: false });
+    browser = await launch({ headless: false });
     let page = await browser.newPage();
 
     await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 100000 });
@@ -135,7 +151,7 @@ async function scrap1() {
 
 async function scrap2() {
 
-    let browser = await launch({ headless: false });
+    browser = await launch({ headless: false });
     let page = await browser.newPage();
 
     await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 100000 });
@@ -194,7 +210,7 @@ async function scrap2() {
 
 async function scrap3() {
 
-    let browser = await launch({ headless: false });
+    browser = await launch({ headless: false });
     let page = await browser.newPage();
 
     await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 100000 });
@@ -565,26 +581,31 @@ async function manageNumberBetCycle2(page, initialAmount) {
     let amount = initialAmount;
     let betIndex = 1;
     const betArray = jsonData.amounts;
+    let result = 'win';
+    let userNumber = null;
 
     while (true) {
         let timerValue = await getTimerValue(page);
         console.log(`Timer value: ${timerValue}`);
 
         if (timerValue > 6) {
-            // Get the best number to bet on
-            const userNumber = await getChartData(page);
-            console.log('Betting on Number : ', userNumber);
+            // Get the best number to bet on if the previous result was a win
+            if (result === 'win' || userNumber === null) {
+                userNumber = await getChartData(page);
+                console.log('Betting on Number:', userNumber);
+            }
 
-            const result = await placeNumberBet2(page, amount, userNumber, timerValue);
+            result = await placeNumberBet2(page, amount, userNumber, timerValue);
 
             if (result === 'loss') {
                 await closePopup(page);
                 amount = betArray[betIndex];
-                betIndex = (betIndex + 1);
+                betIndex++;
             } else if (result === 'win') {
                 await closePopup(page);
                 amount = initialAmount;
                 betIndex = 1;
+                userNumber = null; // Reset userNumber to get a new number after the next win
             }
         } else {
             console.log("Waiting for timer to be above 6 seconds...");
@@ -592,6 +613,7 @@ async function manageNumberBetCycle2(page, initialAmount) {
         }
     }
 }
+
 
 
 
@@ -609,11 +631,12 @@ async function getChartData(page) {
 
     console.log("chat section");
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
+    
     await page.waitForSelector('.Trend__C-body1');
-
+    
     console.log("Body is found");
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     const numbersData = await page.evaluate(() => {
         // The parent container of the numbers data
