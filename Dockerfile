@@ -6,6 +6,7 @@ USER root
 RUN apt-get update && \
     apt-get install -y \
     xvfb \
+    xauth \
     dbus-x11 \
     libgtk-3-0 \
     libnss3 \
