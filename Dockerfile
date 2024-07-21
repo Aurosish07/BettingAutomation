@@ -1,12 +1,10 @@
 # Use the Puppeteer base image
 FROM ghcr.io/puppeteer/puppeteer:22.10.0
 
-# Set environment variables
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
-
-# Install necessary dependencies
-RUN apt-get update && apt-get install -y \
+# Install necessary dependencies as root user
+USER root
+RUN apt-get update && \
+    apt-get install -y \
     xvfb \
     dbus-x11 \
     libgtk-3-0 \
@@ -39,5 +37,8 @@ COPY . .
 # Expose the port your app runs on
 EXPOSE 3000
 
-# Start the server with xvfb-run
+# Define environment variable
+ENV NODE_ENV=production
+
+# Run the application with xvfb-run
 CMD ["xvfb-run", "--auto-servernum", "--server-args=-screen 0 1024x768x24", "node", "index.js"]
