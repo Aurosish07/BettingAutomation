@@ -4,27 +4,6 @@ FROM ghcr.io/puppeteer/puppeteer:22.10.0
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-# Install necessary dependencies
-RUN apt-get update && \
-    apt-get install -y \
-    xvfb \
-    dbus-x11 \
-    libgtk-3-0 \
-    libnss3 \
-    libxss1 \
-    libasound2 \
-    libgbm-dev \
-    libatk-bridge2.0-0 \
-    libx11-xcb1 \
-    libxcomposite1 \
-    libxcursor1 \
-    libxdamage1 \
-    libxi6 \
-    libxtst6 \
-    xauth \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
-
 # Set the working directory
 WORKDIR /usr/src/app
 
@@ -33,6 +12,27 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm ci
+
+# Update package list
+RUN apt-get update
+
+# Install necessary dependencies for headful Puppeteer
+RUN apt-get install -y xvfb
+RUN apt-get install -y dbus-x11
+RUN apt-get install -y libgtk-3-0
+RUN apt-get install -y libnss3
+RUN apt-get install -y libxss1
+RUN apt-get install -y libasound2
+RUN apt-get install -y libgbm-dev
+RUN apt-get install -y libatk-bridge2.0-0
+RUN apt-get install -y libx11-xcb1
+RUN apt-get install -y libxcomposite1
+RUN apt-get install -y libxcursor1
+RUN apt-get install -y libxdamage1
+RUN apt-get install -y libxi6
+RUN apt-get install -y libxtst6
+RUN apt-get install -y xauth
+RUN rm -rf /var/lib/apt/lists/*
 
 # Copy the rest of your application code
 COPY . .
