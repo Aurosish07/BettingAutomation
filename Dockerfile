@@ -7,5 +7,6 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 RUN npm ci
+RUN npx puppeteer browsers install chrome
 COPY . .
 CMD [ "node", "index.js" ]
