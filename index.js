@@ -1,4 +1,4 @@
-import { launch } from 'puppeteer';
+import puppeteer from 'puppeteer';
 import express from "express";
 import bodyParser from 'body-parser';
 import dotnv from "dotenv";
@@ -8,7 +8,7 @@ let browser;
 
 dotnv.config();
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 
 app.use(bodyParser.json());
 app.use(express.static("public"));
@@ -91,7 +91,20 @@ app.listen(port, () => {
 //The main function
 async function scrap1() {
 
-    browser = await launch({ headless: false });
+    browser = await puppeteer.launch({
+        headless: false,
+        args: [
+            "--disable-setuid-sandbox",
+            "--no-sandbox",
+            "--single-process",
+            "--no-zygote",
+        ],
+        executablePath:
+            process.env.NODE_ENV === "production"
+                ? process.env.PUPPETEER_EXECUTABLE_PATH
+                : puppeteer.executablePath(),
+    });
+
     let page = await browser.newPage();
 
     await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 100000 });
@@ -152,8 +165,20 @@ async function scrap1() {
 
 
 async function scrap2() {
+    browser = await puppeteer.launch({
+        headless: false,
+        args: [
+            "--disable-setuid-sandbox",
+            "--no-sandbox",
+            "--single-process",
+            "--no-zygote",
+        ],
+        executablePath:
+            process.env.NODE_ENV === "production"
+                ? process.env.PUPPETEER_EXECUTABLE_PATH
+                : puppeteer.executablePath(),
+    });
 
-    browser = await launch({ headless: false });
     let page = await browser.newPage();
 
     await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 100000 });
@@ -212,7 +237,20 @@ async function scrap2() {
 
 async function scrap3() {
 
-    browser = await launch({ headless: false });
+    browser = await puppeteer.launch({
+        headless: false,
+        args: [
+            "--disable-setuid-sandbox",
+            "--no-sandbox",
+            "--single-process",
+            "--no-zygote",
+        ],
+        executablePath:
+            process.env.NODE_ENV === "production"
+                ? process.env.PUPPETEER_EXECUTABLE_PATH
+                : puppeteer.executablePath(),
+    });
+
     let page = await browser.newPage();
 
     await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 100000 });
