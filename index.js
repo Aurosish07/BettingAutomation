@@ -1,12 +1,14 @@
 import { launch } from 'puppeteer';
 import express from "express";
 import bodyParser from 'body-parser';
+import dotnv from "dotenv";
 
 let jsonData;
 let browser;
 
+dotnv.config();
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 4000;
 
 app.use(bodyParser.json());
 app.use(express.static("public"));
@@ -631,11 +633,11 @@ async function getChartData(page) {
 
     console.log("chat section");
 
-    
+
     await page.waitForSelector('.Trend__C-body1');
-    
+
     console.log("Body is found");
-    
+
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     const numbersData = await page.evaluate(() => {
