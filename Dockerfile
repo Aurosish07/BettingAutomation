@@ -1,9 +1,11 @@
 FROM ghcr.io/puppeteer/puppeteer:22.10.0
 
+USER root
+
 # Install necessary dependencies for Xvfb
-RUN apt-get update && \
-    apt-get install -y xvfb dbus-x11 libgtk-3-0 libnss3 libxss1 libasound2 libgbm-dev libatk-bridge2.0-0 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxi6 libxtst6 xauth --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update
+RUN apt-get install -y xvfb dbus-x11 libgtk-3-0 libnss3 libxss1 libasound2 libgbm-dev libatk-bridge2.0-0 libx11-xcb1 libxcomposite1 libxcursor1 libxdamage1 libxi6 libxtst6 xauth --no-install-recommends
+RUN rm -rf /var/lib/apt/lists/*
 
 # Set environment variables for Puppeteer
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
