@@ -96,9 +96,11 @@ app.listen(port, () => {
 
 //The main function
 async function scrap1() {
-
+    console.log("phase1")
 
     xvfb.start((err) => { if (err) console.error(err) });
+
+    console.log("phase2")
 
     const browser = await puppeteer.launch({
         headless: false,
@@ -112,9 +114,11 @@ async function scrap1() {
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH
     });
 
+    console.log("phase3")
 
     let page = await browser.newPage();
 
+    console.log("phase3")
     await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 100000 });
 
     await page.waitForSelector('.phoneInput__container-input input[name="userNumber"]');
