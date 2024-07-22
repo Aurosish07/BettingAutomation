@@ -2,6 +2,12 @@ import puppeteer from 'puppeteer';
 import express from "express";
 import bodyParser from 'body-parser';
 import dotnv from "dotenv";
+import Xvfb from "xvfb"
+
+var xvfb = new Xvfb({
+    silent: true,
+    xvfb_args: ["-screen", "0", '1280x720x24', "-ac"],
+});
 
 let jsonData;
 let browser;
@@ -91,19 +97,21 @@ app.listen(port, () => {
 //The main function
 async function scrap1() {
 
-    browser = await puppeteer.launch({
+
+    xvfb.start((err) => { if (err) console.error(err) });
+
+    const browser = await puppeteer.launch({
         headless: false,
+        defaultViewport: null,
         args: [
-            "--disable-setuid-sandbox",
-            "--no-sandbox",
-            "--single-process",
-            "--no-zygote",
+            '--no-sandbox',
+            '--start-fullscreen',
+            '--disable-setuid-sandbox',
+            '--display=' + xvfb._display
         ],
-        executablePath:
-            process.env.NODE_ENV === "production"
-                ? process.env.PUPPETEER_EXECUTABLE_PATH
-                : puppeteer.executablePath(),
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH
     });
+
 
     let page = await browser.newPage();
 
