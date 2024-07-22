@@ -118,8 +118,9 @@ async function scrap1() {
 
     let page = await browser.newPage();
 
-    console.log("phase3")
+    console.log("phase4")
     await page.goto("https://tirangaapk.com/#/login", { waitUntil: 'networkidle0', timeout: 100000 });
+    console.log("phase5")
 
     await page.waitForSelector('.phoneInput__container-input input[name="userNumber"]');
     await page.waitForSelector('.passwordInput__container-input input[type="password"]');
